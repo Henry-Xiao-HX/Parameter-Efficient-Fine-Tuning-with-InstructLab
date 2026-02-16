@@ -1,0 +1,35 @@
+version: 2
+task_description: "Teach the model the definition, importance, and examples of financial literarcy"
+created_by: Henry-Xiao
+domain: finance
+seed_examples:
+  - question: What is financial literarcy?
+    answer: |
+      Financial literacy is the ability to understand and effectively use various financial skills, 
+      including personal financial management, budgeting, and investing.
+  - question: Why is it important to have financial literarcy?
+    answer: |
+      A strong foundation of financial literacy can help support various life goals, such as saving for education or retirement, using debt responsibly, and running a business.
+  - question: What are some pitfalls of illiterarcy?
+    answer: |
+      Being financially illiterate can lead to many pitfalls, such as being more likely to accumulate unsustainable debt burdens, either through poor spending decisions or a lack of long-term preparation. This, in turn, can lead to poor credit, bankruptcy, housing foreclosure, and other negative consequences.
+  - question: Do financial literacy only affect individuals, or do they affect the population?
+    answer: |
+      Though these may seem like individual problems, they have a wider effect on the entire population than previously believed. The lack of knowledge of mortgage products prior to the 2008 financial crisis created widespread vulnerability to predatory lending. The financial impact of that crisis affected the entire economy.
+  - question: What are benefits of financial literarcy?
+    answer: |
+      Financial literacy can prevent devastating financial mistakes. Financial literacy prepares people for financial emergencies. Financial literacy can help individuals reach their goals. Financial literacy gives rise to confidence.
+  - question: What are budgets??
+    answer: |
+      Budgeting is the excerise of tracking how much money you receive each month and how much you spend. You can use an Excel spreadsheet, paper, or a budgeting app.
+  - question: How to get your credit report?
+    answer: |
+      Once a year, consumers can request a free credit report from each of the three major credit bureaus—Equifax, Experian, and TransUnion—through the federally created website
+  - question: What are strategies to improve financial literarcy skills?
+    answer: |
+      Create a budget, pay yourself first, pay bills promptly, get your credit report, check your credit score, manage debt, and invest in your future
+document:
+  repo: https://github.ibm.com/fsm-squad-10/models-with-instruct-lab.git
+  commit: 229c9546967e6b7c46cb239c0b687b3a617b49df
+  patterns:
+    - "models/finance_life_coach/financial_literarcy/financial_literarcy.md"

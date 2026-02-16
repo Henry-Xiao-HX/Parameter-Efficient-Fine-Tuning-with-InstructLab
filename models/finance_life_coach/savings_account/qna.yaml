@@ -1,0 +1,27 @@
+version: 2
+task_description: "Teach the model the definition, usage, and of savings account"
+created_by: Henry-Xiao
+domain: finance
+seed_examples:
+  - question: What is a savings account?
+    answer: |
+      A savings account is a bank account at a retail bank.
+  - question: Why do people deposit funds in savings account?
+    answer: |
+      People deposit funds in savings account for a variety of reasons, including a safe place to hold their cash.
+  - question: What are some types of savings accounts?
+    answer: |
+      Some type of savings accounts include youth saving accounts, retirement accounts, investment accounts,
+      money market accounts.
+  - question: What are high yield savings accounts?
+    answer: |
+      High yield savings account are a type of savings account with higher interrest than normal savings accounts.
+  - question: What are some features of sacings account
+    answer: |
+      Common features include a limited number of withdrawals, a lack of cheque and linked debit card facilities,
+      limited transfer options and the inability to be overdrawn.
+document:
+  repo: https://github.ibm.com/fsm-squad-10/models-with-instruct-lab.git
+  commit: ce32d37c81f5bb9ee1227a7fb6d2e3493e35650e
+  patterns:
+    - 'models/finance_life_coach/savings_account/savings_account.md'
