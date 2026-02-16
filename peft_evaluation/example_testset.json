@@ -1,0 +1,62 @@
+[
+    {
+        "question": "When did the 2024 Oscars happen?",
+        "expected_keywords": ["March", "2024", "10"],
+        "category": "oscars",
+        "difficulty": "easy"
+    },
+    {
+        "question": "What film had the most Oscar nominations in 2024?",
+        "expected_keywords": ["Oppenheimer", "13", "nominations"],
+        "category": "oscars",
+        "difficulty": "easy"
+    },
+    {
+        "question": "Who won Best Actor at the 2024 Oscars and what film were they in?",
+        "expected_keywords": ["Cillian Murphy", "Oppenheimer"],
+        "category": "oscars",
+        "difficulty": "medium"
+    },
+    {
+        "question": "List the top 3 films by number of awards at the 2024 Oscars",
+        "expected_keywords": ["Oppenheimer", "Poor Things", "awards"],
+        "category": "oscars",
+        "difficulty": "hard"
+    },
+    {
+        "question": "What is a savings account?",
+        "expected_keywords": ["bank", "account", "save", "funds"],
+        "category": "finance",
+        "difficulty": "easy"
+    },
+    {
+        "question": "What are the benefits of a high yield savings account?",
+        "expected_keywords": ["interest", "higher", "returns"],
+        "category": "finance",
+        "difficulty": "medium"
+    },
+    {
+        "question": "Compare savings accounts and money market accounts",
+        "expected_keywords": ["account", "features", "differences"],
+        "category": "finance",
+        "difficulty": "hard"
+    },
+    {
+        "question": "Who hosted the 2024 Oscars?",
+        "expected_keywords": ["Jimmy Kimmel"],
+        "category": "oscars",
+        "difficulty": "easy"
+    },
+    {
+        "question": "Why do people use savings accounts for their money?",
+        "expected_keywords": ["safe", "secure", "interest", "savings"],
+        "category": "finance",
+        "difficulty": "medium"
+    },
+    {
+        "question": "What financial features should I look for in a savings account?",
+        "expected_keywords": ["interest", "fees", "withdrawals", "minimum balance"],
+        "category": "finance",
+        "difficulty": "hard"
+    }
+]
