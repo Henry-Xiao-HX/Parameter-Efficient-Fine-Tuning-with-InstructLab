@@ -7,18 +7,20 @@ This guide shows how to use the three new tools:
 3. Inference Tester
 """
 
-# ============================================================================
+
 # 1. DATA QUALITY ANALYZER
-# ============================================================================
 # Analyze the quality of generated synthetic data
 
+```python
 from peft_metrics.data_quality_analyzer import analyze_generated_data
-
+```
 # Analyze a generated data file
+```python
 metrics = analyze_generated_data(
     data_path="models/2024_oscars/generated/generated_*.json",
     output_report="quality_report.txt"
 )
+```
 
 # Print specific metrics
 print(f"Quality Score: {metrics.quality_score}")
@@ -26,14 +28,12 @@ print(f"Duplicate Rate: {metrics.duplicate_rate:.1%}")
 print(f"Diversity: {metrics.diversity_score}")
 
 
-# ============================================================================
 # 2. AUTOMATED DATA GENERATION PIPELINE
-# ============================================================================
-# Run end-to-end data generation with quality gates
+### Run end-to-end data generation with quality gates
 
 from peft_pipeline.data_generation_pipeline import run_pipeline, PipelineConfig
 
-# Run full pipeline with parameters
+### Run full pipeline with parameters
 results = run_pipeline(
     taxonomy_path="instructlab/taxonomy",
     output_dir="./pipeline_results",
@@ -43,7 +43,7 @@ results = run_pipeline(
     model_endpoint="http://localhost:8000/v1"
 )
 
-# Check results for each domain
+### Check results for each domain
 for result in results:
     print(f"Domain: {result.domain}")
     print(f"Status: {result.status}")
@@ -52,10 +52,8 @@ for result in results:
         print(f"Data File: {result.data_file}")
 
 
-# ============================================================================
-# 3. MODEL INFERENCE TESTER
-# ============================================================================
-# Compare baseline and trained models
+# 3. MODEL INFERENCE TESTER 
+### Compare baseline and trained models
 
 from peft_evaluation.inference_tester import (
     InferenceTester,
@@ -63,32 +61,32 @@ from peft_evaluation.inference_tester import (
     save_comparison_report
 )
 
-# Load test cases
+### Load test cases
 test_cases = load_testset_from_file("peft_evaluation/example_testset.json")
 
-# Create tester
+### Create tester
 tester = InferenceTester(
     model_endpoint="http://localhost:8000/v1",
     timeout=30
 )
 
-# Compare models
+### Compare models
 comparison = tester.compare_models(
     baseline_endpoint="http://localhost:8000/v1",  # Original model
     trained_endpoint="http://localhost:8001/v1",   # Trained model
     test_cases=test_cases
 )
 
-# Save comparison report
+### Save comparison report
 save_comparison_report(comparison, "comparison_results.json")
 
 print(f"Accuracy Improvement: {comparison['improvements']['accuracy_change_percent']:+.1f}%")
 
 
-# ============================================================================
-# COMPLETE WORKFLOW EXAMPLE
-# ============================================================================
 
+# COMPLETE WORKFLOW EXAMPLE
+
+```python
 def complete_fine_tuning_workflow():
     """
     Complete workflow from data generation to evaluation
@@ -174,3 +172,4 @@ if __name__ == "__main__":
     print("  from peft_metrics.data_quality_analyzer import DataQualityAnalyzer")
     print("  from peft_pipeline.data_generation_pipeline import run_pipeline")
     print("  from peft_evaluation.inference_tester import InferenceTester")
+```

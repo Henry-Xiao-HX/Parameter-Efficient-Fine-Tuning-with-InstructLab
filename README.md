@@ -1,13 +1,13 @@
 # Overview:
-This repository includes examples on how to fine tune models with domain specific languages via instruct-lab. Follow this repository for **downloading** a pre-trained Large Language Model, **chatting** with the model, **generating** synthetic data and **re-training** LLM with new data. 
+This repository includes examples on how to fine tune models with domain specific languages via instruct-lab. Follow this repository for **downloading** a pre-trained Large Language Model, **chatting** with the model, **generating** synthetic data and **fine-tuning** LLM with new data. 
 
 ## 🆕 New Features (v2.0)
 
 This version includes three new tools for improving PEFT workflows:
 
-1. **📊 Data Quality Analyzer** - Analyze synthetic data quality before training
-2. **🔄 Data Generation Pipeline** - Automate data generation with quality gates
-3. **🧪 Model Inference Tester** - Compare baseline vs trained models
+1. **Data Quality Analyzer** - Analyze synthetic data quality before training
+2. **Data Generation Pipeline** - Automate data generation with quality gates
+3. **Model Inference Tester** - Compare baseline vs trained models
 
 See [TOOLS_GUIDE.md](TOOLS_GUIDE.md) and [QUICK_START.md](QUICK_START.md) for details.
 
@@ -39,7 +39,7 @@ ilab serve  --model-path instructlab-merlinite-7b-lab-trained/instructlab-merlin
 ilab chat
 ```
 
-## Advanced Workflow with PEFT Tools (New!)
+## Advanced Workflow with PEFT Tools
 For production quality fine-tuning with built-in quality assurance:
 ```bash
 # 1. Serve baseline model
