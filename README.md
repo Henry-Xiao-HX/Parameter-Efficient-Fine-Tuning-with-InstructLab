@@ -1,324 +1,461 @@
-# Overview:
-This repository includes examples on how to fine tune models with domain specific languages via instruct-lab. Follow this repository for **downloading** a pre-trained Large Language Model, **chatting** with the model, **generating** synthetic data and **fine-tuning** LLM with new data. 
+# PEFT with InstructLab
 
-## 🆕 New Features (v2.0)
+Parameter-efficient fine-tuning toolkit with data quality analysis, automated pipeline orchestration, and model evaluation.
 
-This version includes three new tools for improving PEFT workflows:
-
-1. **Data Quality Analyzer** - Analyze synthetic data quality before training
-2. **Data Generation Pipeline** - Automate data generation with quality gates
-3. **Model Inference Tester** - Compare baseline vs trained models
-
-See [TOOLS_GUIDE.md](TOOLS_GUIDE.md) and [QUICK_START.md](QUICK_START.md) for details.
-
-Note: Since the trained model can not be added into GitHub repository, the **qna.yaml** used to generate data, and the generated training data, are stored instead. 
-# Summary of workflow
-
-## Basic Workflow
-The following sections include details on getting started with InstructLab. After setting up InstructLab, your workflow will look similar to:
-```bash
-# Create a new qna.yaml file and put it the correct place, like the /softball/ directory in the taxonomy tree
-
-# Validate skills/knowledge 
-ilab taxonomy diff
-
-# Serve a model 
-ilab serve  --model-path ibm-merlinite-7b-mlx-q-fused-pt/ggml-model-Q4_K_M.gguf
-
-# Generate synthetic training data with a served model
-ilab data generate --endpoint-url http://localhost:8000/v1
-
-# Train the model with generated data 
-ilab model train
-
-# Save the model
-ilab model convert
-
-# Serve the trained model (look for folder with -trained suffix)
-ilab serve  --model-path instructlab-merlinite-7b-lab-trained/instructlab-merlinite-7b-lab-Q4_K_M.gguf
-ilab chat
-```
-
-## Advanced Workflow with PEFT Tools
-For production quality fine-tuning with built-in quality assurance:
-```bash
-# 1. Serve baseline model
-ilab serve --model-path models/baseline.gguf
-
-# 2. Generate data with quality gates
-python peft_pipeline/data_generation_pipeline.py instructlab/taxonomy \
-    --output pipeline_output \
-    --quality-threshold 0.7
-
-# 3. Review quality metrics
-cat pipeline_output/pipeline_report.txt
-
-# 4. Train and convert
-ilab model train
-ilab model convert
-
-# 5. Compare with baseline
-python peft_evaluation/inference_tester.py \
-    --baseline http://localhost:8000/v1 \
-    --trained http://localhost:8001/v1 \
-    --testset peft_evaluation/example_testset.json \
-    --output results.json
-```
-
-See [QUICK_START.md](QUICK_START.md) for detailed examples.
-
-# Getting Started
-
-## Prerequisites
-- Python 3.8+
-- InstructLab installed and initialized
-- For PEFT tools: numpy, pyyaml
-
-## Installing InstructLab
-
-The following instructions assume running on Apple M1/M2/M3 Mac. For others, please refer to [documentation](https://github.com/instructlab/instructlab?tab=readme-ov-file#welcome-to-the-instructlab-cli)
-
-### Installing ilab
-1. Create working directory
-```
-mkdir instructlab
-cd instructlab
-```
-
-2. Install within virtual environment.
-```
-python3 -m venv venv
-source venv/bin/activate
-pip install instructlab
-```
-
-3. For all commands in the repository, make sure you're running within the virtual environment via 
-```
-source venv/bin/activate
-```
-
-4. verify installation, run this command in terminal.  
-```
-ilab
-```
-
-## Initializing ilab
-1. Initialize ilab by running the following command:
-```
-ilab config init
-```
-2. When prompted by the interface, press Enter to add a new default config.yaml file.
-3. When prompted, clone the https://github.com/instructlab/taxonomy.git repository into the current directory by typing `y`.
-
-Note: Taxonomy includes **skills** and **knowledges**. **Skills** are used (1)to select the right subset of the taxonomy to use for data generation (2)to determine the interpretability by human contributors and maintainers (3)as part of the prompt to the LLM used to generate synthetic samples. **Knowledges** help answering questions that involve facts, data orreferences. 
-
-4. Download a compact pre-trained version of the model `merlinite-7b-lab-Q4_K_M.gguf` from HuggingFace and store it in a models directory:
-```
-ilab model download
-```
-Alternatively, download specifc model via 
-```
-HF_TOKEN=<YOUR HUGGINGFACE TOKEN GOES HERE> ilab model download --repository=TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF --filename=mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf
-```
-
-5. Serve model via
-```
-ilab model serve
-```
-Alternatively, serve a non-default model
-```
-ilab model serve --model-path models/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf
-```
-6. Chat with the model: open a new terminal, and run 
-```
-ilab model chat
-```
-Alternatively, chat with a non-default model: 
-```
-ilab model chat --model models/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf
-```
-
-## Creating new knowledge or skills and training the model
-Note: We have downloaded a model, we can now use synthetically generated data to re-train the model. 
-1. Move new knowledge/skill into taxonomy repository. 
-```
-cp -r models/2024_oscars/oscar instructlab/taxonomy/knowledge/
-```
-2. Validate data
-```
-ilab taxonomy diff
-```
-3. Generate a synthetic data
-```
-ilab data generate
-```
-Alternatively, use a non-default model, or a served model 
-```
-ilab data generate --model models/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf
-```
-Or
-```
-ilab data generate --endpoint-url http://localhost:8000/v1
-```
-Note: The synthetic data set will be three files in the newly created generated directory named generated*.json, test*.jsonl, and train*.jsonl.
-
-4. Train the model with the generated data
-```
-ilab model train
-```
-5. Save the model 
-```
-ilab model convert
-```
-6. Serve the new model. After running the ilab model convert command, some files and a directory are generated. The model you will want to serve ends with an extension of .gguf and exists in a directory with the suffix trained. For example: instructlab-merlinite-7b-lab-trained/instructlab-merlinite-7b-lab-Q4_K_M.gguf.
-```
-ilab model serve --model-path <new model path>
-```
-
-# Improving Results
-Optimizing the quality of the outputs generated by the model: Model fine tuning and response optimization. Various steps to improve models in each sections. 
-## Skill composition:
-Composing and contributing effective and impactful skills is an iterative process. The typical workflow looks something like this:
-```
-1. Compose skill examples.
-
-2. Run the ilab data generate command.
-
-3. Examine the generated examples based on the supplied skill (found in the generated folder).
-
-4. If the generated examples are not satisfactory in quality, edit the skill examples.
-
-5. Repeat the process until you are satisfied with the generated data.
-```
-**How to improve the skill YAML**
-- Increase the **number of examples** in your skill YAML file. The more examples that the model has to go off of, the faster it will be able to generate synthetic data. The generated data will also be better if the input contains a wider range of examples.
-
-- Improve the **quality of provided examples**. Review the examples provided to it and see if they can be rephrased in a way that they align better with what you are hoping to see the model generate. This will improve chances of the model generating better quality synthetic data in large quantities.
-
-## Data generation:
-The data generation step is executed via the `ilab data generate` command, and is responsible for generating synthetic data. This forms the basis for what the model will end up learning.
-
-**How to improve quality of generated data**
-
-1. Increase the number of instructions generated by passing the --num-instructions flag to the ilab data generate command as follows: ilab data generate --num-instructions 1000. The --num-instructions flag will generate 1000 points of synthetic data based on your provided examples. The greater the number of instructions generated, the better the model will be trained (within reasonable limits).
-
-2. Adjust the rouge threshold via --rouge-threshold parameter. Rogue threshold is a parameter that determines how likely a synthetic data point, generated by the model, will be added to the output based on how similar it is to previously generated data points. The value of rouge threshold ranges from 1.0 to 0.0, where 1.0 indicates maximum leniency (every newly generated data point is accepted) and 0.0 indicates maximum strictness (every newly generated data point is rejected). Setting a rouge threshold value closer to 0.0 would force the model to generate data that is different from what it has already generated, leading to a more diverse dataset overall. Rouge threshold can be set as follows: ilab data generate --rouge-threshold 0.75
-
-3. Using a better model via --model. Larger models can lead to better data generation. This option requires users to be familiar with various existing models, and which specific models would suit their needs. This could mean either using a model with more nodes than the default InstructLab merlinite-7b-lab model, such as the Mixtral-8x7B-Instruct-v0.1 model, or using an unquantized version of the InstructLab merlinite-7b-lab model. It can be used as follows: ilab serve --model-path models/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf and ilab data generate --model models/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf
-
-4. Set the number of CPU cores that can be used to generate data via --num-cpus. This defaults to 10, but increasing this value could potentially lead to better generated data. It can be used as follows: ilab data generate --num-cpus 15
-
-
-## Training
+**Version**: 2.0 | **Status**: Actively Maintained
 
 ---
 
-# 🆕 New PEFT Tools
+## Contents
 
-This repository now includes automated tools for high-quality fine-tuning:
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Tools](#tools)
+- [Workflow](#workflow)
+- [Metrics](#metrics)
+- [Roadmap](#roadmap)
+- [Troubleshooting](#troubleshooting)
 
-## Tool 1: Data Quality Analyzer
+---
 
-Evaluates synthetic data quality before training.
+## Architecture
 
-**Usage:**
-```bash
-python peft_metrics/data_quality_analyzer.py path/to/generated_data.json
+### System Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PEFT Fine-Tuning Framework               │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                ┌─────────────┼─────────────┐
+                │             │             │
+                ▼             ▼             ▼
+        ┌──────────────┐ ┌──────────────┐ ┌─────────────────┐
+        │   PHASE 1    │ │   PHASE 2    │ │    PHASE 3      │
+        │ Data Prep    │ │   Training   │ │   Evaluation    │
+        └──────────────┘ └──────────────┘ └─────────────────┘
+                │             │             │
+        ┌───────┴───────┐     │     ┌───────┴──────────┐
+        │               │     │     │                  │
+        ▼               ▼     ▼     ▼                  ▼
+    ┌────────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐
+    │  Synthetic │ │   Data   │ │  Adapter │ │  Inference   │
+    │    Data    │ │ Quality  │ │ Training │ │   Tester     │
+    │ Generation │ │ Analyzer │ │          │ │              │
+    └────────────┘ └──────────┘ └──────────┘ └──────────────┘
+         ▲             ▲             ▲             ▲
+         │             │             │             │
+    InstructLab      PEFT Metrics   InstructLab   PEFT Eval
 ```
 
-**Features:**
-- Duplicate detection
-- Diversity scoring
-- Length analysis
-- Quality grade (0-1)
-- Actionable recommendations
+### Component Breakdown
 
-## Tool 2: Data Generation Pipeline
+#### Phase 1: Data Preparation
+- **Input**: Seed examples in `qna.yaml`
+- **Process**: Generate synthetic training data using InstructLab
+- **Output**: JSON/JSONL files with generated Q&A pairs
+- **Tool**: [`peft_pipeline/data_generation_pipeline.py`](peft_pipeline/data_generation_pipeline.py)
 
-Automates data generation across multiple domains with quality gates.
+#### Phase 2: Quality Analysis & Training
+- **Input**: Generated synthetic data
+- **Process**: 
+  - Analyze data quality (duplicates, diversity, consistency)
+  - Apply quality gates
+  - Train adapter models using parameter-efficient techniques
+- **Output**: Quality report, adapter files
+- **Tools**: [`peft_metrics/data_quality_analyzer.py`](peft_metrics/data_quality_analyzer.py)
 
-**Usage:**
-```bash
-python peft_pipeline/data_generation_pipeline.py instructlab/taxonomy \
-    --output pipeline_output \
-    --num-instructions 500 \
-    --quality-threshold 0.7
+#### Phase 3: Evaluation & Comparison
+- **Input**: Baseline and trained models, test cases
+- **Process**: Run inference on both models and compare metrics
+- **Output**: Accuracy improvements, latency metrics, domain-specific analysis
+- **Tool**: [`peft_evaluation/inference_tester.py`](peft_evaluation/inference_tester.py)
+
+## Roadmap
+
+**v2.0** (Current) ✅
+- `peft_metrics/`: Core quality analysis (metrics, deduplication, scoring, reporting)
+- `peft_evaluation/`: Model inference comparison (accuracy, latency, domain-specific)
+
+**v2.1** 🚧 WIP
+- `peft_pipeline/`: Data orchestration (domain discovery, quality gates) + optimization
+
+**v2.2+** 📋 Planned
+- Advanced analysis: Statistical analysis, outlier detection, clustering, benchmarking
+- Pipeline: Resume capability, incremental generation, dependency resolution
+- Evaluation: Ensemble comparison, token-level accuracy, hallucination detection
+- Integration: Web UI, MLflow tracking, optimization recommendations
+- Performance: GPU acceleration, distributed processing, streaming
+
+---
+
+### Directory Structure
+
+```
+repository/
+├── peft_metrics/                          # Data quality analysis
+│   ├── data_quality_analyzer.py          # Main analyzer (✅ Complete)
+│   ├── data_quality_analyzer_with_HuggingFace.py  # HF Evaluate version
+│   ├── data_and_algo.md                  # Algorithm documentation
+│   └── example_testset.json
+├── peft_pipeline/                         # Data generation orchestration
+│   ├── data_generation_pipeline.py       # Pipeline orchestrator (🚧 WIP)
+│   └── __init__.py
+├── peft_evaluation/                       # Model inference testing
+│   ├── inference_tester.py               # Comparison tool (✅ Complete)
+│   └── example_testset.json              # Sample test cases
+├── models/                                # Model storage
+│   ├── 2024_oscars/                      # Example domain
+│   │   ├── generated/                    # Generated training data
+│   │   ├── oscar/                        # Original QNA files
+│   │   └── README.md
+│   ├── finance_life_coach/               # Another example domain
+│   └── baseline.gguf                     # Base model
+├── QUICK_START.md                        # Quick reference
+├── TOOLS_GUIDE.md                        # Detailed tool documentation
+├── PEFT_Tools_Demo.ipynb                 # Interactive notebook
+├── run_workflow.sh                       # Complete automation script
+├── requirements.txt                      # Python dependencies
+└── README.md                             # This file
 ```
 
-**Features:**
-- Auto-discover domains
-- Parallel generation
-- Quality gates (configurable threshold)
-- Summary reporting
-- JSON results export
+---
 
-## Tool 3: Model Inference Tester
+## Requirements
 
-Compares baseline and trained models on test cases.
+- Python 3.8+
+- InstructLab (latest)
+- 16GB+ RAM (model serving)
 
-**Usage:**
+**Setup**:
 ```bash
+python3 -m venv venv && source venv/bin/activate
+pip install instructlab -r requirements.txt
+ilab config init
+```
+
+**Dependencies**: numpy, pyyaml, evaluate (optional)
+
+---
+
+## Quick Start
+
+```bash
+# Terminal 1: Serve baseline model
+ilab serve --model-path models/baseline.gguf
+
+# Terminal 2: Generate & evaluate data
+ilab data generate --endpoint-url http://localhost:8000/v1
+python peft_metrics/data_quality_analyzer.py models/*/generated/*.json report.txt
+
+# Train & convert
+ilab model train && ilab model convert
+
+# Serve trained model
+ilab serve --model-path models/trained/model.gguf --port 8001
+
+# Terminal 3: Compare models
 python peft_evaluation/inference_tester.py \
-    --baseline http://localhost:8000/v1 \
-    --trained http://localhost:8001/v1 \
-    --testset peft_evaluation/example_testset.json \
-    --output results.json
+  --baseline http://localhost:8000/v1 \
+  --trained http://localhost:8001/v1 \
+  --testset peft_evaluation/example_testset.json
 ```
 
+---
+
+## Tools
+
+### 1. Data Quality Analyzer ✅
+
+**Path**: [`peft_metrics/data_quality_analyzer.py`](peft_metrics/data_quality_analyzer.py) | **Status**: Complete
+
+**Metrics** (targets):
+- `quality_score`: 0-1 (aim 0.70+)
+- `duplicate_rate`: % of near-duplicates (<10%)
+- `diversity_score`: 0-1 semantic variety (0.50+)
+- `avg_rouge_score`: 0.30-0.70 content similarity
+- `avg_instruction_length`: 5-15 words
+- `avg_output_length`: 30-100 words
+
+**Usage**:
+```bash
+python peft_metrics/data_quality_analyzer.py <input.json> [output.txt]
+```
+
+**Python API**:
+```python
+from peft_metrics.data_quality_analyzer import DataQualityAnalyzer
+
+analyzer = DataQualityAnalyzer("data.json")
+metrics = analyzer.calculate_metrics()
+duplicates = analyzer.identify_duplicates(threshold=0.95)
+analyzer.generate_report("report.txt")
+```
+
+---
+
+### Tool 2: Model Inference Tester 🟢 Complete
+
+Compares baseline and trained models on standardized test cases.
+
+**Location**: [`peft_evaluation/inference_tester.py`](peft_evaluation/inference_tester.py)
+
 **Features:**
-- Response quality evaluation
-- Domain-specific accuracy
+- Automated inference testing on both models
+- Response quality evaluation (EXCELLENT/GOOD/PARTIAL/POOR)
+- Domain-specific accuracy tracking
+- Difficulty-based performance analysis
+- Side-by-side model comparison
 - Performance improvement metrics
 - Latency benchmarking
 
----
+**Test Case Format:**
 
-## 📚 Documentation
-
-- **[TOOLS_GUIDE.md](TOOLS_GUIDE.md)** - Comprehensive tool documentation
-- **[QUICK_START.md](QUICK_START.md)** - Runnable examples and workflows
-- **[run_workflow.sh](run_workflow.sh)** - Complete automation script
-
-## 📦 Installing Tool Dependencies
-
-```bash
-pip install -r requirements_tools.txt
+```json
+{
+    "question": "When did the 2024 Oscars happen?",
+    "expected_keywords": ["March", "2024", "10"],
+    "category": "oscars",
+    "difficulty": "easy"
+}
 ```
 
----
+**Response Quality Levels:**
 
-## 🚀 Complete Workflow Example
+| Level | Criteria |
+|-------|----------|
+| `EXCELLENT` | Directly answers with all key points |
+| `GOOD` | Answers with minor issues |
+| `PARTIAL` | Partially correct or incomplete |
+| `POOR` | Incorrect or irrelevant |
+
+**Python Usage:**
+
+```python
+from peft_evaluation.inference_tester import (
+    InferenceTester,
+    load_testset_from_file,
+    save_comparison_report
+)
+
+# Load test cases
+test_cases = load_testset_from_file("peft_evaluation/example_testset.json")
+
+# Create tester
+tester = InferenceTester(
+    model_endpoint="http://localhost:8000/v1",
+    timeout=30
+)
+
+# Compare models
+comparison = tester.compare_models(
+    baseline_endpoint="http://localhost:8000/v1",
+    baseline_model="gpt-oss:20b",
+    trained_endpoint="http://localhost:8001/v1",
+    trained_model="llama3:70b",
+    test_cases=test_cases
+)
+
+# Display results
+print(f"Accuracy Improvement: {comparison['improvements']['accuracy_change_percent']:+.1f}%")
+print(f"Latency Improvement: {comparison['improvements']['latency_improvement_percent']:+.1f}%")
+
+# Save comparison report
+save_comparison_report(comparison, "comparison_results.json")
+```
+
+**Command Line Usage:**
 
 ```bash
-# 1. Terminal 1: Serve baseline model
-ilab serve --model-path models/baseline.gguf
-
-# 2. Terminal 2: Generate data with quality checks
-python peft_pipeline/data_generation_pipeline.py instructlab/taxonomy \
-    --output pipeline_output \
-    --quality-threshold 0.7
-
-# 3. Terminal 2: Train model
-ilab model train
-ilab model convert
-
-# 4. Terminal 2: Serve trained model
-ilab serve --model-path models/trained/model.gguf --port 8001
-
-# 5. Terminal 3: Compare models
 python peft_evaluation/inference_tester.py \
     --baseline http://localhost:8000/v1 \
     --trained http://localhost:8001/v1 \
     --testset peft_evaluation/example_testset.json \
-    --output results.json
+    --output comparison_results.json
 ```
 
-See [QUICK_START.md](QUICK_START.md) for more examples.
-The training step is run with the **ilab model train** command. This step trains the model on the synthetic data that was generated. The output of this step is a set of adapter files with the general format adapters-xxx.npz, where xxx is a number. These adapter files represent a snapshot of the model's trained state and are periodically written to disk.
+**Output Metrics:**
 
-**How to improve training**
-1. Increase the number of training iterations via --iters flag. A larger number of iterations usually means a better trained model.
 ```
-NOTE: Diminishing returns might kick in around 300 or so iterations. Increasing the number of iterations comes at the cost of having to wait longer for the training to complete.
+╔══════════════════════════════════════════════════════────════╗
+║              MODEL COMPARISON RESULTS                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+📈 ACCURACY
+──────────────────────────────────────────────────────────────
+  Baseline:  75.2%  (94/125)
+  Trained:   82.4%  (103/125)
+  Change:    +7.2%  🟢
+
+⚡ LATENCY
+──────────────────────────────────────────────────────────────
+  Baseline:  245 ms
+  Trained:   198 ms
+  Improvement: -19.2%
+
+✅ SUCCESS RATE
+──────────────────────────────────────────────────────────────
+  Baseline:  89.6%
+  Trained:   94.4%
 ```
-2. Pick an adapter file with the lowest validation loss. The training process generates and persists an adapter file periodically. The terminal output will tell you the validation loss that each adapter is associated with. The frequency of adapter file generation will be controlled by --save-every flag. For example, ilab model train --save-every 10 outputs an adapter file every 10th iteration.
+
+---
+
+### Tool 3: Data Generation Pipeline 🟡 Work in Progress
+
+Orchestrates end-to-end data generation with quality gates and batch processing.
+
+**Location**: [`peft_pipeline/data_generation_pipeline.py`](peft_pipeline/data_generation_pipeline.py)
+
+**Status**: 🚧 **Under Development** - Core functionality complete, optimization in progress
+
+**Features:**
+- Automatic domain discovery in taxonomy
+- Domain configuration validation
+- Parallel data generation with progress tracking
+- Integrated quality gates (blocks low-quality data)
+- Aggregated reporting and JSON results
+- Detailed execution logging
+
+**Pipeline Steps:**
+
+1. ✅ Discover domains in taxonomy
+2. ✅ Validate QNA configurations
+3. ✅ Generate synthetic data per domain
+4. ✅ Analyze data quality
+5. ✅ Apply quality gate (configurable threshold)
+6. ✅ Generate summary report
+
+**Configuration:**
+
+```python
+from peft_pipeline.data_generation_pipeline import (
+    PipelineConfig,
+    DataGenerationPipeline,
+    run_pipeline
+)
+
+config = PipelineConfig(
+    taxonomy_path="instructlab/taxonomy",
+    output_base_dir="./pipeline_output",
+    num_instructions=500,
+    rouge_threshold=0.75,
+    num_cpus=10,
+    model_endpoint="http://localhost:8000/v1",
+    quality_gate_threshold=0.7,      # Minimum quality to proceed
+    seed_examples_min=3
+)
+
+pipeline = DataGenerationPipeline(config)
+results = pipeline.run()
+```
+
+**Python Usage:**
+
+```python
+from peft_pipeline.data_generation_pipeline import run_pipeline
+
+# Run full pipeline
+results = run_pipeline(
+    taxonomy_path="instructlab/taxonomy",
+    output_dir="./pipeline_output",
+    num_instructions=1000,
+    rouge_threshold=0.75,
+    quality_threshold=0.7,
+    model_endpoint="http://localhost:8000/v1"
+)
+
+# Check results
+for result in results:
+    print(f"Domain: {result.domain}")
+    print(f"Status: {result.status}")
+    if result.status == "success":
+        metrics = result.quality_metrics
+        print(f"Quality: {metrics['quality_score']*100:.1f}%")
+        print(f"Samples: {metrics['unique_samples']}/{metrics['total_samples']}")
+    elif result.status == "quality_gate_blocked":
+        print(f"Blocked: {result.error_message}")
+    else:
+        print(f"Failed: {result.error_message}")
+```
+
+**Command Line Usage:**
+
+```bash
+python peft_pipeline/data_generation_pipeline.py \
+    instructlab/taxonomy \
+    --output ./pipeline_output \
+    --num-instructions 1000 \
+    --rouge-threshold 0.75 \
+    --quality-threshold 0.7 \
+    --endpoint http://localhost:8000/v1
+```
+
+**Output Files:**
+- `pipeline_results.json` - Detailed results per domain
+- `pipeline_report.txt` - Human-readable summary
+- `*/generated_data.json` - Individual domain generated data
+
+---
+
+## Workflow
+
+**Phase 1 (30-60m)**: Generate data → Analyze quality  
+**Phase 2 (1-4h)**: Train adapter → Convert model  
+**Phase 3 (15-30m)**: Compare baseline vs trained → Report metrics
+
+**Multi-terminal setup**:
+```bash
+# T1: Baseline (keep running)
+ilab serve --model-path models/baseline.gguf
+
+# T2: Generate & train
+python peft_pipeline/data_generation_pipeline.py instructlab/taxonomy --output pipeline_output
+ilab model train && ilab model convert
+ilab serve --model-path models/trained/model.gguf --port 8001
+
+# T3: Evaluate
+python peft_evaluation/inference_tester.py --baseline http://localhost:8000/v1 --trained http://localhost:8001/v1 --testset peft_evaluation/example_testset.json
+```
+
+
+
+---
+
+## Metrics
+
+| Metric | Range | Target | Interpretation |
+|--------|-------|--------|----------------|
+| **quality_score** | 0-1 | 0.70+ | Overall data quality; 0.85+ is production-ready |
+| **duplicate_rate** | % | <10% | Data diversity; >30% indicates too many duplicates |
+| **diversity_score** | 0-1 | 0.50+ | Semantic variety; 0.7+ = high variety |
+| **accuracy_change** | % | +5% to +10% | Model improvement; <0% = degradation |
+| **success_rate** | % | 85%+ | % of correct responses; 95%+ = excellent |
+| **latency_improvement** | % | >0% | Negative = faster responses |
+
+**Quality gates**: Default quality_score threshold is 0.7 (tunable)
+
+--- 
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| **Endpoint connection failed** | Verify model is running: `ilab serve --model-path model.gguf` on correct port (default 8000) |
+| **Low quality scores** | Increase seed examples (5+), improve diversity, lower rouge_threshold (0.60 vs 0.75) |
+| **High duplicate rate** | Lower rouge_threshold, add diverse seed examples, manually review seeds |
+| **Inference tester timeout** | Increase `--timeout` parameter, ensure models on different ports, check network |
+| **Training loss not decreasing** | Check data quality >0.7, increase iterations, review seed example quality/diversity |
+
+
+
+---
+## References
+
+- **InstructLab Documentation**: https://github.com/instructlab/instructlab
+- **Parameter-Efficient Fine-Tuning**: https://arxiv.org/abs/2106.04560
+- **PEFT Library**: https://github.com/huggingface/peft
+- **HuggingFace Evaluate**: https://github.com/huggingface/evaluate
+
+---

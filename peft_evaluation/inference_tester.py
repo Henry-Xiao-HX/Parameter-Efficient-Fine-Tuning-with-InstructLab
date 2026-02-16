@@ -62,7 +62,7 @@ class ModelEvaluationMetrics:
 class InferenceTester:
     """Tests and evaluates trained models"""
 
-    def __init__(self, model_endpoint: str = "http://localhost:8000/v1", timeout: int = 30):
+    def __init__(self, model_endpoint: str = "http://localhost:11434/v1", timeout: int = 30):
         """
         Initialize tester with model endpoint
         
@@ -74,12 +74,13 @@ class InferenceTester:
         self.timeout = timeout
         self.results: List[InferenceResult] = []
 
-    def run_inference(self, question: str) -> Optional[InferenceResult]:
+    def run_inference(self, question: str, model: str = "gpt-oss:20b") -> Optional[InferenceResult]:
         """
         Run single inference query against model
         
         Args:
             question: Question to ask model
+            model: Model name/identifier to use for inference
             
         Returns:
             InferenceResult or None on timeout
@@ -87,16 +88,13 @@ class InferenceTester:
         try:
             start_time = time.time()
             
-            # Use curl or requests to query model
-            import subprocess
-            
             cmd = [
                 "curl", "-s",
                 "-X", "POST",
                 f"{self.model_endpoint}/chat/completions",
                 "-H", "Content-Type: application/json",
                 "-d", json.dumps({
-                    "model": "instructlab-model",
+                    "model": model,
                     "messages": [{"role": "user", "content": question}],
                     "temperature": 0.7,
                     "max_tokens": 200
@@ -169,13 +167,15 @@ class InferenceTester:
 
     def evaluate_on_testset(
         self,
-        test_cases: List[TestCase]
+        test_cases: List[TestCase],
+        model: str = "gpt-oss:20b"
     ) -> ModelEvaluationMetrics:
         """
         Evaluate model on set of test cases
         
         Args:
             test_cases: List of TestCase objects
+            model: Model name/identifier to use for inference
             
         Returns:
             ModelEvaluationMetrics object
@@ -193,11 +193,12 @@ class InferenceTester:
         latencies = []
         
         print(f"\n🧪 Running inference tests ({len(test_cases)} cases)...")
+        print(f"   Model: {model}")
         print(f"{'─'*60}")
         
         for i, test_case in enumerate(test_cases, 1):
-            # Run inference
-            inference = self.run_inference(test_case.question)
+            # Run inference with specified model
+            inference = self.run_inference(test_case.question, model=model)
             
             if not inference:
                 results["timeout"] += 1
@@ -258,7 +259,7 @@ class InferenceTester:
         }
         
         metrics = ModelEvaluationMetrics(
-            model_name="Unknown",
+            model_name=model,
             total_tests=total,
             correct_responses=correct,
             partial_responses=results["partial"],
@@ -276,15 +277,19 @@ class InferenceTester:
     def compare_models(
         self,
         baseline_endpoint: str,
+        baseline_model: str,
         trained_endpoint: str,
+        trained_model: str,
         test_cases: List[TestCase]
     ) -> Dict:
         """
         Compare baseline model with trained model
         
         Args:
-            baseline_endpoint: URL of baseline model
-            trained_endpoint: URL of trained model
+            baseline_endpoint: URL of baseline model endpoint
+            baseline_model: Model name for baseline
+            trained_endpoint: URL of trained model endpoint
+            trained_model: Model name for trained model
             test_cases: Test cases to evaluate on
             
         Returns:
@@ -297,14 +302,14 @@ class InferenceTester:
         # Evaluate baseline
         print("\n🔵 Evaluating BASELINE model...")
         self.model_endpoint = baseline_endpoint
-        baseline_metrics = self.evaluate_on_testset(test_cases)
-        baseline_metrics.model_name = "Baseline"
+        baseline_metrics = self.evaluate_on_testset(test_cases, model=baseline_model)
+        baseline_metrics.model_name = f"Baseline ({baseline_model})"
         
         # Evaluate trained
         print("\n🟢 Evaluating TRAINED model...")
         self.model_endpoint = trained_endpoint
-        trained_metrics = self.evaluate_on_testset(test_cases)
-        trained_metrics.model_name = "Trained"
+        trained_metrics = self.evaluate_on_testset(test_cases, model=trained_model)
+        trained_metrics.model_name = f"Trained ({trained_model})"
         
         # Calculate improvements
         accuracy_improvement = (
@@ -415,8 +420,10 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="Model Inference Tester")
-    parser.add_argument("--baseline", required=True, help="Baseline model endpoint")
-    parser.add_argument("--trained", required=True, help="Trained model endpoint")
+    parser.add_argument("--baseline-endpoint", required=True, help="Baseline model endpoint URL")
+    parser.add_argument("--baseline-model", required=True, help="Baseline model name/identifier")
+    parser.add_argument("--trained-endpoint", required=True, help="Trained model endpoint URL")
+    parser.add_argument("--trained-model", required=True, help="Trained model name/identifier")
     parser.add_argument("--testset", required=True, help="Path to test cases JSON file")
     parser.add_argument("--output", help="Output file for comparison report")
     parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
@@ -430,7 +437,13 @@ if __name__ == "__main__":
     
     # Run comparison
     tester = InferenceTester(timeout=args.timeout)
-    comparison = tester.compare_models(args.baseline, args.trained, test_cases)
+    comparison = tester.compare_models(
+        baseline_endpoint=args.baseline_endpoint,
+        baseline_model=args.baseline_model,
+        trained_endpoint=args.trained_endpoint,
+        trained_model=args.trained_model,
+        test_cases=test_cases
+    )
     
     # Save results
     if args.output:
