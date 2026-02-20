@@ -1,0 +1,35 @@
+version: 2
+task_description: 'Teach the model the different risks of AI'
+created_by: henryxiao
+domain: ai
+seed_examples:
+  - question: What is data bias risk for ai?
+    answer: |
+      Historical, representational, and societal biases present in the data used to train and fine tune
+      the model can adversely affect model behavior.
+  - question: What risk can data curation process bring?
+    answer: |
+      Improper data curation can adversely affect how a model is trained, resulting in a model that does
+      not behave in accordance with the intended values.
+  - question: What is the meaning of data usage risk for ai?
+    answer: |
+      Laws and other restrictions can limit or prohibit the use of some data for specific AI use cases..
+  - question: Why is data transparency important?
+    answer: |
+      Data transparency is important for legal compliance and AI ethics.
+  - question: What does reidentification mean for ai?
+    answer: |
+      Even with the removal or personal identifiable information (PII) and sensitive personal
+      information (SPI) from data, it might still be possible to identify persons due to other
+      features available in the data.
+  - question: Why is it important to remove personal information in models?
+    answer: |
+      If not properly developed to protect sensitive data, the model might expose personal information
+      in the generated output. Additionally, personal or sensitive data must be reviewed and handled
+      with respect to privacy laws and regulations, as business entities could face fines, reputational
+      harms, and other legal consequences if found in violation.
+document:
+  repo: https://github.ibm.com/fsm-squad-10/instruct-lab-video-asset.git
+  commit: aed5544
+  patterns:
+    - idea_1_comp_with_rag/AI_risk_atlas/risks_associated_with_input.md
